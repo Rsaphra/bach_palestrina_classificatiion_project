@@ -38,9 +38,10 @@ def get_parts_dict(c_parts: list):
     """
     parts_dict = {}
     for part in c_parts:
-        instrument = part[0]
-        instrument_name = instrument.partName
-        parts_dict[instrument_name] = part[1:]
+        if isinstance(part, music21.stream.Part):
+            instrument = part[0]
+            instrument_name = instrument.partName
+            parts_dict[instrument_name] = part[1:]
     return parts_dict
 
 
@@ -58,8 +59,12 @@ def get_all_measures(parts_dict: dict):
         measure_dict = {}
         measures = value.elements
         for measure in measures:
-            measure_number = measure.measureNumber
-            measure_dict[measure_number] = measure.elements
+            try:
+                measure_number = measure.measureNumber
+                measure_dict[measure_number] = measure.elements
+            except:
+                print('error in get_all_measures')
+                print(measure)
         parts_dict[key] = measure_dict
         all_measures.append(measure_dict)
     return all_measures
@@ -133,17 +138,16 @@ def get_measure_triad(measure_dict_notes: dict):
     for measure_num, notes in measure_dict_notes.items():
         top_3_notes = most_frequent(notes)
         measure_chord_dict[measure_num] = top_3_notes
+        print(top_3_notes)
     return measure_chord_dict
-
-
 
 def get_chord_name(triad):
 
     #returns the common chord name of a triad
-    try:
-        c1 = chord.Chord(triad)
+    if len(triad) != 0:
+        c1 = music21.chord.Chord(triad)
         return c1.pitchedCommonName
-    except:
+    else:
         return None
 
 def add_chord_name(measure_triad_dict: dict):
@@ -169,7 +173,8 @@ def process_score_vertically(score):
     measure_notes = get_notes_by_measure(parts_dict)
     measure_notes = remove_rests_from_measure_dict(measure_notes)
     measure_chord_dict = get_measure_triad(measure_notes)
-    return add_chord_name(measure_chord_dict)
+    measure_chord_dict = add_chord_name(measure_chord_dict)
+    return measure_chord_dict
 
 def get_beat_1_notes(measure_dict_notes: dict):
     """
