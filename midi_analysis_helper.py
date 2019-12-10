@@ -64,7 +64,6 @@ def get_all_measures(parts_dict: dict):
                 measure_dict[measure_number] = measure.elements
             except:
                 print('error in get_all_measures')
-                print(measure)
         parts_dict[key] = measure_dict
         all_measures.append(measure_dict)
     return all_measures
@@ -187,3 +186,47 @@ def get_beat_1_notes(measure_dict_notes: dict):
 
     for measure_num, notes in measure_dict_notes.items():
         print(notes)
+
+
+def get_row_values_from_part_data(part_data, row_dict):
+    """
+        given a dictionary containing the measure number and the music21 note objects
+        contained therin as values, as well as the current row dictionar
+        sets value of each note instance to 1 for its corresponding column
+
+        params: part_data, a dict object containing the meas_num (int) as keys
+        and a list of music21 note objects as values
+            row_dict, a dictionary where keys are all columns and
+            value of each column is whether note exists in measure
+        returns: updated row dict
+    """
+    for meas_num, notes in part_data.items():
+        if meas_num < 8:
+            for note in notes:
+                if isinstance(note, music21.note.Note):
+                    note_beat = note.beatStr
+    #               Make sure that the beat is not a sub-beat (ie. 1/2)
+                    if not '/' in note_beat:
+                        note_name = convert_enharmoic(note.name)
+                        column = get_col_name_from_note(note_name, meas_num, note_beat)
+                        row_dict[column] = 1
+    return row_dict
+
+
+def add_piece_to_df(parts_dict, df, composer):
+
+    #append new row to df with 'title' as the only value known
+    if isinstance(parts_dict, dict):
+        row_dict = {}
+        row_dict = set_part_row_to_0(row_dict, all_columns)
+        row_dict['composer'] = composer
+        #convert the parts dict into a dictionary of measures with notes
+        parts_with_notes_by_measure = get_all_measures(parts_dict)
+        for part in parts_with_notes_by_measure:
+            row_dict = get_row_values_from_part_data(part, row_dict)
+
+        df = df.append(row_dict, ignore_index=True)
+    else:
+        return df
+
+    return df
